@@ -2,7 +2,7 @@ import boto3
 import requests
 from bs4 import BeautifulSoup
 import os
-
+import time
 
 def send_text(message):
     
@@ -34,16 +34,20 @@ def scanner(urls, element, class_name):
         for k, v in urls.items():
             url = v.get('url')
             available = v.get('available')
-            res = requests.get(url, headers=headers)
-            html = res.text
-            soup = BeautifulSoup(html, 'html.parser')
-            status = soup.findAll(element, {"class": class_name})
-            if len(status) != 0 and not available:
-                message = f"{k} card in stock! Here is the url: {url}"
-                print(message)
-                send_text(message)
-                urls[k]["available"] = True
-            elif len(status) == 0:
-                # once card is out of stock, add to cart button is gone, so flip availability back to false
-                urls[k]["available"] = False
-                print(f"{k} card not in stock!")
+            try:
+                res = requests.get(url, headers=headers)
+                html = res.text
+                soup = BeautifulSoup(html, 'html.parser')
+                status = soup.findAll(element, {"class": class_name})
+                if len(status) != 0 and not available:
+                    message = f"{k} card in stock! Here is the url: {url}"
+                    print(message)
+                    send_text(message)
+                    urls[k]["available"] = True
+                elif len(status) == 0:
+                    # once card is out of stock, add to cart button is gone, so flip availability back to false
+                    urls[k]["available"] = False
+                    print(f"{k} card not in stock!")
+            except:
+                print("sent too many requests..sleeping")
+                time.sleep(30)
